@@ -7,7 +7,6 @@ PaisaPilot is a client-side personal finance app that helps you plan a **₹10,0
 > A little more clarity today. A lot more freedom tomorrow.
 
 ---
-
 ## ✨ Features
 
 - **Overview dashboard**
@@ -41,23 +40,39 @@ PaisaPilot is a client-side personal finance app that helps you plan a **₹10,0
   - Toast notifications, keyboard support (Esc closes modals), and a responsive mobile navigation drawer
 
 ---
-
 ## 🛠 Tech Stack
 
 | Layer      | Technology                                   |
 | ---------- | -------------------------------------------- |
 | Framework  | React 18 (TypeScript, function components)   |
 | Build tool | Vite 6 (`@vitejs/plugin-react`)              |
-| Charts     | Recharts                                     |
+| Charts     | Recharts (lazy-loaded via `Suspense`, main bundle ~592 KB → ~204 KB gzipped) |
 | Icons      | lucide-react                                 |
 | Styling    | Hand-rolled CSS (`src/styles.css`), DM Sans + Space Grotesk fonts |
 | Language   | TypeScript ~5.6 (strict mode)                |
-| Persistence| Browser `localStorage`                       |
+| Persistence| Browser `localStorage`                                 |
 
 ---
+## 🌐 Deployment & Security Headers (Vercel)
 
-## 🚀 Getting Started
+`Vercel.json` pins routing and a strict, least-privilege Security Header set:
 
+- **CSP** — `default-src 'self'` with `script-src 'self'`, `style-src 'self'`, `object-src 'none'`, `media-src 'none'`, `worker-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`. **No `'unsafe-eval'`.**
+- **Permissions-Policy** — every unused capability disabled (`geolocation=(), microphone=(), camera=()`, …).
+- **Referrer-Policy** — `strict-origin-when-cross-origin`.
+- **X-Content-Type-Options** — `nosniff`.
+- **X-Frame-Options** — `DENY` (`frame-ancestors 'none'` in the CSP too).
+- **SPA fallback** — all client-side routes rewrite to `index.html`.
+
+---
+## ♿ Accessibility & Responsiveness
+
+- **Keyboard:** skip link, visible `focus-visible` rings, modal focus trap + Escape close + scroll lock + focus restore, drawer nav closes on Escape and restores focus, large touch targets on coarse pointers.
+- **ARIA:** `aria-current`, `aria-pressed`, `aria-expanded` + `aria-controls`, `role="img"` with accessible summaries, `aria-live` regions for toasts, preserved semantics (`<nav>`, `<aside>`, `<main>`, `<button>`) — the `<aside>` is never a hidden `div`.
+- **Visual:** continuous type scale via `clamp()` (no more 8–12px gaps), AA contrast, reflow-friendly grids, no pixel hacks at breakpoints.
+- **Media:** `prefers-reduced-motion` support and forced-colors fallbacks.
+
+---
 ### Prerequisites
 
 - **Node.js** 18+ and **npm**
@@ -91,32 +106,52 @@ npm run preview
 ```
 
 ---
-
 ## 📁 Project Structure
 
 ```
 paisapilot/
-├── index.html            # HTML entry (fonts, meta, #root)
-├── vite.config.ts        # Vite + React plugin config
-├── tsconfig*.json        # TypeScript project references
-└── src/
-    ├── main.tsx          # React entry point (StrictMode)
-    ├── App.tsx           # App shell: sidebar, pages, modals, toasts
-    ├── finance.ts        # 💰 Financial engine — single source of truth
-    └── styles.css        # All styling
+├── vercel.json             # Vercel config: routing + security headers
+├── README.md
+├── index.html
+├── package.json
+├── tsconfig*.json
+├── vite.config.ts
+├── src/
+│   ├── components/         # Reusable, accessible UI primitives
+│   │   ├── AddCommitmentModal.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── ForecastChart.tsx   # Recharts lazy-loaded via Suspense
+│   │   ├── MetricCard.tsx
+│   │   ├── PacePanel.tsx
+│   │   ├── PageHeader.tsx
+│   │   ├── SimulatorModal.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── Topbar.tsx
+│   │   ├── TransactionRow.tsx
+│   │   └── index.ts
+│   ├── hooks/              # Cross-cutting UI behavior
+│   │   └── useDialogBehavior.ts   # Focus trap / Escape / scroll lock / focus restore
+│   ├── pages/              # Route-level screens
+│   │   ├── CommitmentsPage.tsx
+│   │   ├── GoalsPage.tsx
+│   │   ├── OverviewPage.tsx
+│   │   └── TransactionsPage.tsx
+│   ├── App.tsx             # Thin shell: routes + modals + toast + app state
+│   ├── finance.ts          # 💰 Financial engine (pure, testable helpers)
+│   └── styles.css          # All styling (mobile-first, accessible)
+└── dist/                   # Production build output (gitignored)
 ```
 
-### Pages (in `App.tsx`)
+### Pages & routing
 
-| Page              | Purpose                                             |
-| ----------------- | --------------------------------------------------- |
-| Overview          | Balance, allowance, forecast, health, chart         |
-| Transactions      | Filterable history + CSV export                     |
-| Goals & savings   | Goal progress and contributions                     |
-| Commitments       | Bills/subscriptions with due days and toggles       |
+| Route               | Component            |
+| ------------------- | -------------------- |
+| `/`                 | Overview             |
+| `/transactions`     | Transactions         |
+| `/goals`            | Goals & savings      |
+| `/commitments`      | Commitments          |
 
 ---
-
 ## 💰 The Financial Model (`src/finance.ts`)
 
 All figures come from a single engine — the UI never computes money math on its own.
@@ -141,7 +176,6 @@ Key constants:
 Risk levels: **Low**, **Watch**, **High** — derived from your forecast, upcoming commitments, and spending pace.
 
 ---
-
 ## 🗃 Data & Storage
 
 - State is persisted to `localStorage` under `paisapilot-state-v2` on every change.
@@ -150,7 +184,6 @@ Risk levels: **Low**, **Watch**, **High** — derived from your forecast, upcomi
 - Everything runs locally — nothing is sent to a server.
 
 ---
-
 ## 📦 Scripts
 
 | Script            | Command             | Description                                |
@@ -160,11 +193,9 @@ Risk levels: **Low**, **Watch**, **High** — derived from your forecast, upcomi
 | `preview`         | `npm run preview`   | Serve the production build locally         |
 
 ---
-
 ## 🌐 Repository
 
 Source: [github.com/vinaynahar2007/Paisa-Pilot](https://github.com/vinaynahar2007/Paisa-Pilot)
 
 ---
-
 *Make your money make sense.* 🚀

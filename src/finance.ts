@@ -250,3 +250,21 @@ export function toCsv(s: FinanceState): string {
   for (const t of sorted) rows.push([t.id, t.day, t.title, t.category, t.amount, t.kind]);
   return rows.map((row) => row.map((v) => `"${String(v).split('"').join('""')}"`).join(',')).join('\n');
 }
+export function sortTransactions(tx: Tx[]): Tx[] {
+  return [...tx].sort((a, b) => b.day - a.day || (a.id < b.id ? -1 : 1));
+}
+// ---- Challenge pace helpers (pure & testable) ----
+/** Days from 1..current day with zero expense transactions. */
+export function noSpendDays(s: FinanceState): number[] {
+  const spent = new Set<number>();
+  for (const t of s.transactions) { if (t.kind === 'expense') spent.add(t.day); }
+  const days: number[] = [];
+  for (let d = 1; d <= s.day; d++) if (!spent.has(d)) days.push(d);
+  return days;
+}
+/** Longest run of consecutive days within an ascending list of day numbers. */
+export function longestStreak(days: number[]): number {
+  let best = 0; let run = 0; let prev = 0;
+  for (const d of days) { run = d === prev + 1 ? run + 1 : 1; prev = d; if (run > best) best = run; }
+  return best;
+}
